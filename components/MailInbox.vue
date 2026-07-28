@@ -22,9 +22,11 @@ const emits = defineEmits<{
 }>()
 
 const colorMode = useColorMode()
-const { isSyncing, syncAccount, lastSyncTimestamp, clientMessagesCache } = useEmail()
+const { isSyncing, syncAccount, lastSyncTimestamp, clientMessagesCache, accounts, checkAccountPassword } = useEmail()
 const { customization, fetchCustomization } = useCustomization()
 const toast = useToast()
+
+const targetAccount = computed(() => accounts.value.find(a => a.id === props.accountId))
 
 const messages = ref<any[]>([])
 const totalMessages = ref(0)
@@ -518,8 +520,24 @@ defineExpose({
           <span>Loading emails...</span>
         </div>
 
+        <div v-else-if="targetAccount && targetAccount.hasPassword === false" class="p-8 text-center text-xs flex flex-col items-center justify-center h-full min-h-[300px] gap-3">
+          <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <Icon name="lucide:key-round" class="w-6 h-6" />
+          </div>
+          <div class="space-y-1">
+            <p class="font-semibold text-zinc-200 text-sm">Passwort erforderlich</p>
+            <p class="text-zinc-400 text-xs max-w-xs">
+              Gib das Passwort für <strong class="text-zinc-200">{{ targetAccount.email }}</strong> ein, um Ordner und E-Mails abzurufen.
+            </p>
+          </div>
+          <Button type="button" @click="checkAccountPassword(targetAccount.id)" size="sm" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium mt-1">
+            <Icon name="lucide:key" class="w-3.5 h-3.5 mr-1.5" />
+            <span>Passwort jetzt eingeben</span>
+          </Button>
+        </div>
+
         <div v-else-if="filteredMessages.length === 0" class="p-8 text-center text-xs text-zinc-500">
-          No messages in this folder.
+          Keine E-Mails in diesem Ordner.
         </div>
 
         <div
