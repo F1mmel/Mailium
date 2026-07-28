@@ -39,13 +39,29 @@ export const imapService = {
   async fetchFolders(accountId: string) {
     const client = await this.getClient(accountId);
     try {
-      const list = await client.list();
-      return list.map(f => ({
-        path: f.path,
-        name: (f.name || f.path || '').toUpperCase() === 'INBOX' ? 'Inbox' : f.name,
-        flags: Array.from(f.flags),
-        unseen: f.status?.unseen || 0
-      }));
+      const list = await client.list({ statusQuery: { unseen: true } });
+      const results: any[] = [];
+
+      for (const f of list) {
+        let unseen = f.status?.unseen;
+        if (unseen === undefined || unseen === null) {
+          const cached = await readFolderCache(accountId, f.path);
+          if (cached && cached.messages && Array.isArray(cached.messages)) {
+            unseen = cached.messages.filter((m: any) => !m.isRead && (!m.flags || !m.flags.includes('\\Seen'))).length;
+          } else {
+            unseen = 0;
+          }
+        }
+
+        results.push({
+          path: f.path,
+          name: (f.name || f.path || '').toUpperCase() === 'INBOX' ? 'Inbox' : f.name,
+          flags: Array.from(f.flags || []),
+          unseen: unseen || 0
+        });
+      }
+
+      return results;
     } finally {
       await client.logout();
     }

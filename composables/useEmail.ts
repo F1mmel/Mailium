@@ -49,14 +49,12 @@ export const useEmail = () => {
   const totalUnreadCount = computed(() => {
     let total = 0;
     Object.values(folders.value).forEach(accountFolders => {
-      const inbox = accountFolders?.find((f: any) =>
-        ['Inbox', 'INBOX'].includes(f.name) ||
-        (f.flags && f.flags.some((fl: string) => fl.toLowerCase().includes('inbox'))) ||
-        f.path === 'INBOX'
-      );
-      if (inbox && inbox.unseen) {
-        total += inbox.unseen;
-      }
+      if (!Array.isArray(accountFolders)) return;
+      accountFolders.forEach((f: any) => {
+        if (f.unseen && typeof f.unseen === 'number') {
+          total += f.unseen;
+        }
+      });
     });
     return total;
   });
