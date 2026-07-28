@@ -37,9 +37,12 @@ export const verifyToken = (token: string): UserPayload | null => {
 };
 
 export const setAuthCookie = (event: H3Event, token: string) => {
+  const req = event.node.req;
+  const isHttps = !!(req.socket as any)?.encrypted || req.headers['x-forwarded-proto'] === 'https';
+
   setCookie(event, 'auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     maxAge: 60 * 60 * 24 * 30, // 30 days
     path: '/',
     sameSite: 'lax',
@@ -49,7 +52,7 @@ export const setAuthCookie = (event: H3Event, token: string) => {
 export const clearAuthCookie = (event: H3Event) => {
   setCookie(event, 'auth_token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     maxAge: 0,
     path: '/',
     sameSite: 'lax',
