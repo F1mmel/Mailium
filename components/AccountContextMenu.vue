@@ -69,15 +69,6 @@ const onClearPassword = () => {
           <div class="text-[10px] text-zinc-400 truncate font-mono">{{ account.email }}</div>
         </div>
 
-        <!-- Open Settings -->
-        <button
-          @click="onOpenSettings"
-          class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-zinc-900 hover:text-white transition-colors cursor-pointer text-left"
-        >
-          <Icon name="lucide:settings" class="w-4 h-4 text-indigo-400" />
-          <span>Open Account Settings</span>
-        </button>
-
         <!-- Hide Account -->
         <button
           @click="onHideAccount"

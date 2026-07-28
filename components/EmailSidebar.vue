@@ -14,6 +14,7 @@ const emits = defineEmits<{
   (e: 'select-account', accountId: string): void
   (e: 'select-folder', folderPath: string): void
   (e: 'open-compose'): void
+  (e: 'open-settings', tab?: 'accounts' | 'customization'): void
   (e: 'move-emails', payload: { accountId: string; uids: string[]; targetFolder: string }): void
 }>()
 
@@ -457,20 +458,20 @@ const handleDrop = (e: DragEvent, accountId: string, targetFolder: string) => {
 
     <!-- Footer / Settings & Logout -->
     <div class="p-3 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/95 gap-1 shrink-0 mt-auto">
-      <NuxtLink to="/settings/accounts" class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors shrink-0">
+      <button @click="$emit('open-settings', 'accounts')" class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors shrink-0 cursor-pointer">
         <Icon name="lucide:settings" class="w-4 h-4" />
         <span>Settings</span>
-      </NuxtLink>
+      </button>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Customization Palette Button (Navigates to /settings/customization) -->
-        <NuxtLink
-          to="/settings/customization"
-          class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
+        <!-- Customization Palette Button -->
+        <button
+          @click="$emit('open-settings', 'customization')"
+          class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
           title="Appearance & Customization"
         >
           <Icon name="lucide:palette" class="w-4 h-4" />
-        </NuxtLink>
+        </button>
 
         <button @click="logout" title="Sign Out" class="p-1.5 text-zinc-400 hover:text-red-400 rounded-md hover:bg-zinc-900 transition-colors cursor-pointer shrink-0">
           <Icon name="lucide:log-out" class="w-4 h-4" />

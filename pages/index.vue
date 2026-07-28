@@ -5,6 +5,7 @@ import EmailSidebar from '~/components/EmailSidebar.vue'
 import MailInbox from '~/components/MailInbox.vue'
 import ComposeModal from '~/components/ComposeModal.vue'
 import PasswordModal from '~/components/PasswordModal.vue'
+import SettingsModal from '~/components/SettingsModal.vue'
 import PwaInstallPrompt from '~/components/PwaInstallPrompt.vue'
 
 const route = useRoute()
@@ -28,6 +29,14 @@ const selectedMessageId = ref<string | null>(null)
 const isComposeOpen = ref(false)
 const composeInitialTo = ref('')
 const composeInitialSubject = ref('')
+
+const isSettingsModalOpen = ref(false)
+const activeSettingsTab = ref<'accounts' | 'customization'>('accounts')
+
+const handleOpenSettings = (tab: 'accounts' | 'customization' = 'accounts') => {
+  activeSettingsTab.value = tab
+  isSettingsModalOpen.value = true
+}
 
 const syncQueryParams = () => {
   if (!process.client || !selectedAccountId.value) return
@@ -57,6 +66,12 @@ onMounted(async () => {
     const qAccount = route.query.account as string
     const qFolder = route.query.folder as string
     const qMessageId = route.query.messageId as string
+    const qSettings = route.query.settings as string
+
+    if (qSettings && ['accounts', 'customization'].includes(qSettings)) {
+      activeSettingsTab.value = qSettings as any
+      isSettingsModalOpen.value = true
+    }
 
     if (qAccount && accounts.value.length > 0) {
       const found = accounts.value.find(a => a.email.toLowerCase() === qAccount.toLowerCase() || a.id === qAccount)
@@ -145,6 +160,7 @@ const handlePasswordSaved = async () => {
       @select-account="handleSelectAccount"
       @select-folder="handleSelectFolder"
       @open-compose="openComposeNew"
+      @open-settings="handleOpenSettings"
       @move-emails="handleMoveEmails"
     />
 
@@ -157,6 +173,13 @@ const handlePasswordSaved = async () => {
       @select-message="handleSelectMessage"
       @reply-mail="handleReplyMail"
       @forward-mail="handleForwardMail"
+    />
+
+    <!-- Settings Modal Overlay -->
+    <SettingsModal
+      :isOpen="isSettingsModalOpen"
+      :initialTab="activeSettingsTab"
+      @close="isSettingsModalOpen = false"
     />
 
     <!-- Compose Modal -->
