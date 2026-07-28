@@ -50,12 +50,34 @@ async function run() {
     logLevel: 'info'
   });
 
-  console.log('2. Inlining public static assets into server bundle...');
+  console.log('2. Inlining public static assets & adding CLI argument parser...');
   const publicAssets = getPublicAssets('.output/public');
   const assetCount = Object.keys(publicAssets).length;
   console.log(`Found ${assetCount} static assets in .output/public`);
 
-  const assetMiddleware = `
+  const portAndAssetMiddleware = `
+(function() {
+  const args = process.argv.slice(2);
+  let customPort = null;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg.startsWith('--port=')) {
+      customPort = arg.split('=')[1];
+    } else if (arg === '--port' || arg === '-p') {
+      if (args[i + 1] && !args[i + 1].startsWith('-')) {
+        customPort = args[i + 1];
+      }
+    }
+  }
+  if (customPort) {
+    const p = parseInt(customPort, 10);
+    if (!isNaN(p) && p > 0) {
+      process.env.NITRO_PORT = String(p);
+      process.env.PORT = String(p);
+    }
+  }
+})();
+
 const http = require('http');
 const embeddedAssets = ${JSON.stringify(publicAssets)};
 
@@ -89,8 +111,8 @@ http.Server.prototype.emit = function (event, req, res) {
   const validUrl = url.pathToFileURL(process.cwd() + '/index.js').href;
   code = code.replaceAll('file:///_entry.js', validUrl);
   
-  // Inject asset middleware at top
-  code = assetMiddleware + '\n' + code;
+  // Inject port parser & asset middleware at top
+  code = portAndAssetMiddleware + '\n' + code;
   writeFileSync('dist/server.cjs', code);
 
   console.log('3. Preparing Node SEA config...');
