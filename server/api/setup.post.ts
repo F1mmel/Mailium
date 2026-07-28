@@ -16,59 +16,61 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { username, email, password, mailcowHost, mailcowApiKey } = body;
 
-  const adminEmail = email || 'admin@localhost';
-  const adminUsername = username || 'admin';
-
-  if (!password) {
+  if (!username || !email || !password) {
     throw createError({
       statusCode: 400,
-      message: 'Ein Passwort ist erforderlich.',
+      message: 'Benutzername, E-Mail und Passwort sind erforderlich.',
+    });
+  }
+
+  if (!mailcowHost || !mailcowApiKey) {
+    throw createError({
+      statusCode: 400,
+      message: 'Mailcow Host und API-Key sind erforderlich.',
     });
   }
 
   let emailAccounts: any[] = [];
   let mailcowSettings = null;
 
-  if (mailcowHost && mailcowApiKey) {
-      try {
-          const host = mailcowHost.replace(/^https?:\/\//, '');
-          const mailcowUrl = `https://${host}/api/v1/get/mailbox/all`;
-          
-          const mailboxes: any = await $fetch(mailcowUrl, {
-             headers: {
-                 'X-API-Key': mailcowApiKey,
-                 'Content-Type': 'application/json'
-             }
-          });
+  try {
+    const host = mailcowHost.replace(/^https?:\/\//, '');
+    const mailcowUrl = `https://${host}/api/v1/get/mailbox/all`;
+    
+    const mailboxes: any = await $fetch(mailcowUrl, {
+        headers: {
+            'X-API-Key': mailcowApiKey,
+            'Content-Type': 'application/json'
+        }
+    });
 
-          if (Array.isArray(mailboxes)) {
-              emailAccounts = mailboxes
-                .filter((mb: any) => mb.active === 1)
-                .map((mb: any) => ({
-                 id: `mc_${mb.username}`, 
-                 name: mb.name || mb.username,
-                 email: mb.username,
-                 imapHost: host, 
-                 imapPort: 993,
-                 imapUser: mb.username,
-                 imapPass: '',
-                 smtpHost: host,
-                 smtpPort: 465, 
-                 smtpUser: mb.username,
-                 smtpPass: '',
-                 tls: true,
-                 source: 'mailcow',
-                 visible: true
-             }));
-          }
-          
-          mailcowSettings = { host, apiKey: mailcowApiKey };
-      } catch (e: any) {
-          throw createError({
-              statusCode: 400,
-              message: 'Mailcow Verbindung fehlgeschlagen: ' + (e.message || e)
-          });
-      }
+    if (Array.isArray(mailboxes)) {
+        emailAccounts = mailboxes
+          .filter((mb: any) => mb.active === 1)
+          .map((mb: any) => ({
+            id: `mc_${mb.username}`, 
+            name: mb.name || mb.username,
+            email: mb.username,
+            imapHost: host, 
+            imapPort: 993,
+            imapUser: mb.username,
+            imapPass: '',
+            smtpHost: host,
+            smtpPort: 465, 
+            smtpUser: mb.username,
+            smtpPass: '',
+            tls: true,
+            source: 'mailcow',
+            visible: true
+        }));
+    }
+    
+    mailcowSettings = { host, apiKey: mailcowApiKey };
+  } catch (e: any) {
+    throw createError({
+        statusCode: 400,
+        message: 'Mailcow Verbindung fehlgeschlagen: ' + (e.message || e)
+    });
   }
 
   const hashedPassword = await hashPassword(password);
@@ -76,8 +78,8 @@ export default defineEventHandler(async (event) => {
   
   const adminUser = {
     id: 'admin',
-    username: adminUsername,
-    email: adminEmail,
+    username: username.trim(),
+    email: email.trim(),
     password: hashedPassword,
     role: 'admin',
     authorName: 'Administrator',
