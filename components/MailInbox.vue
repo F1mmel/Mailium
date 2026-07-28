@@ -22,7 +22,7 @@ const emits = defineEmits<{
 }>()
 
 const colorMode = useColorMode()
-const { isSyncing, syncAccount, lastSyncTimestamp, clientMessagesCache, accounts, checkAccountPassword } = useEmail()
+const { isSyncing, syncAccount, lastSyncTimestamp, clientMessagesCache, accounts, checkAccountPassword, decrementUnseen, incrementUnseen } = useEmail()
 const { customization, fetchCustomization } = useCustomization()
 const toast = useToast()
 
@@ -218,6 +218,7 @@ const loadMessageDetail = async (id: string) => {
     const target = messages.value.find(m => m.id === id)
     if (target && !target.isRead) {
       target.isRead = true
+      decrementUnseen(props.accountId, props.folderPath)
       $fetch('/api/email/flags', {
         method: 'PUT',
         body: {
@@ -268,6 +269,10 @@ const moveSpecificMessages = async (uids: string[], targetFolder: string) => {
       }
     })
     const uidSet = new Set(uids)
+    const unreadCountInMoved = messages.value.filter(m => uidSet.has(m.id) && !m.isRead).length
+    if (unreadCountInMoved > 0) {
+      decrementUnseen(props.accountId, props.folderPath, unreadCountInMoved)
+    }
     messages.value = messages.value.filter(m => !uidSet.has(m.id))
     
     // Update memory cache
@@ -296,7 +301,10 @@ const moveSpecificMessages = async (uids: string[], targetFolder: string) => {
 }
 
 const handleMarkRead = (msg: any) => {
-  msg.isRead = true
+  if (!msg.isRead) {
+    msg.isRead = true
+    decrementUnseen(props.accountId, props.folderPath)
+  }
   toast.info('Marked as Read', msg.subject)
   $fetch('/api/email/flags', {
     method: 'PUT',
@@ -311,7 +319,10 @@ const handleMarkRead = (msg: any) => {
 }
 
 const handleMarkUnread = (msg: any) => {
-  msg.isRead = false
+  if (msg.isRead) {
+    msg.isRead = false
+    incrementUnseen(props.accountId, props.folderPath)
+  }
   toast.info('Marked as Unread', msg.subject)
   $fetch('/api/email/flags', {
     method: 'PUT',

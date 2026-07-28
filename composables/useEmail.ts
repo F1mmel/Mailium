@@ -245,6 +245,34 @@ export const useEmail = () => {
     startAutoSyncTimer();
   };
 
+  const decrementUnseen = (accountId?: string | null, folderPath?: string | null, delta: number = 1) => {
+    if (!accountId) return;
+    const path = folderPath || 'INBOX';
+    const accFolders = folders.value[accountId];
+    if (accFolders && Array.isArray(accFolders)) {
+      const folder = accFolders.find((f: any) =>
+        f.path === path || f.name === path || (path === 'INBOX' && (f.name === 'Inbox' || f.path === 'INBOX'))
+      );
+      if (folder && typeof folder.unseen === 'number') {
+        folder.unseen = Math.max(0, folder.unseen - delta);
+      }
+    }
+  };
+
+  const incrementUnseen = (accountId?: string | null, folderPath?: string | null, delta: number = 1) => {
+    if (!accountId) return;
+    const path = folderPath || 'INBOX';
+    const accFolders = folders.value[accountId];
+    if (accFolders && Array.isArray(accFolders)) {
+      const folder = accFolders.find((f: any) =>
+        f.path === path || f.name === path || (path === 'INBOX' && (f.name === 'Inbox' || f.path === 'INBOX'))
+      );
+      if (folder) {
+        folder.unseen = (folder.unseen || 0) + delta;
+      }
+    }
+  };
+
   return {
     allAccounts,
     accounts,
@@ -265,6 +293,8 @@ export const useEmail = () => {
     syncAccount,
     checkAccountPassword,
     initGlobalPush,
-    updateIntervalSettings
+    updateIntervalSettings,
+    decrementUnseen,
+    incrementUnseen
   };
 };
