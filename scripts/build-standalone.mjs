@@ -58,8 +58,8 @@ async function run() {
   const assetCount = Object.keys(publicAssets).length;
   console.log(`Found ${assetCount} static assets in .output/public`);
 
-  const updaterAndAssetMiddleware = `
-(async function() {
+  const updaterAndAssetMiddlewareHeader = `
+async function __checkAutoUpdate() {
   const fs = require('fs');
   const path = require('path');
   const child_process = require('child_process');
@@ -68,7 +68,7 @@ async function run() {
   try {
     const oldPath = process.execPath + '.old';
     if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath);
+      try { fs.unlinkSync(oldPath); } catch (e) {}
     }
   } catch (e) {}
 
@@ -173,7 +173,7 @@ async function run() {
       console.log('[Auto-Update] Update check skipped/failed:', err.message);
     }
   }
-})();
+}
 
 const http = require('http');
 const embeddedAssets = ${JSON.stringify(publicAssets)};
@@ -202,14 +202,17 @@ http.Server.prototype.emit = function (event, req, res) {
   }
   return originalEmit.apply(this, arguments);
 };
+
+(async function __runMain() {
+  await __checkAutoUpdate();
 `;
 
   let code = readFileSync('dist/server.cjs', 'utf8');
   const validUrl = url.pathToFileURL(process.cwd() + '/index.js').href;
   code = code.replaceAll('file:///_entry.js', validUrl);
   
-  // Inject auto-updater & asset middleware at top
-  code = updaterAndAssetMiddleware + '\n' + code;
+  // Inject auto-updater & asset middleware at top, wrapping Nitro server init
+  code = updaterAndAssetMiddlewareHeader + '\n' + code + '\n})();';
   writeFileSync('dist/server.cjs', code);
 
   console.log('3. Preparing Node SEA config...');

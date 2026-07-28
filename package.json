@@ -2,7 +2,7 @@
   "name": "mailium",
   "private": true,
   "type": "module",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "scripts": {
     "build": "nuxt build",
     "build:binary": "node scripts/build-standalone.mjs",
