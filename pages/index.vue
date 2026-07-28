@@ -127,6 +127,14 @@ const handleMoveEmails = (payload: { accountId: string; uids: string[]; targetFo
     mailInboxRef.value.moveSpecificMessages(payload.uids, payload.targetFolder)
   }
 }
+
+const handlePasswordSaved = async () => {
+  await fetchAccounts()
+  if (selectedAccountId.value) {
+    await fetchFolders(selectedAccountId.value, true)
+    await syncAccount(selectedAccountId.value)
+  }
+}
 </script>
 
 <template>
@@ -165,6 +173,7 @@ const handleMoveEmails = (payload: { accountId: string; uids: string[]; targetFo
       :isOpen="isPasswordModalOpen"
       :account="accountNeedingPassword"
       @close="isPasswordModalOpen = false"
+      @saved="handlePasswordSaved"
     />
 
     <!-- iOS Home Screen & Push Notification Prompt -->

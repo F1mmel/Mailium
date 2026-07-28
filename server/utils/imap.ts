@@ -97,6 +97,12 @@ export const imapService = {
       forceSync = arg5;
     }
 
+    const dbData = await readData();
+    const account = dbData.emailAccounts?.find((a: any) => a.id === accountId);
+    if (!account || !account.imapPass) {
+        throw new Error('AUTH_REQUIRED');
+    }
+
     const lockKey = `${accountId}:${folder}`;
     if (syncLocks.has(lockKey)) {
         await syncLocks.get(lockKey);
@@ -202,6 +208,12 @@ export const imapService = {
   },
 
   async fetchMessageDetail(accountId: string, folder: string = 'INBOX', uid: string) {
+    const dbData = await readData();
+    const account = dbData.emailAccounts?.find((a: any) => a.id === accountId);
+    if (!account || !account.imapPass) {
+        throw new Error('AUTH_REQUIRED');
+    }
+
     const cachedFolder = await readFolderCache(accountId, folder);
     const cachedMsg = cachedFolder?.messages?.find((m: any) => m.uid.toString() === uid.toString());
 

@@ -136,10 +136,19 @@ const handleContextMenu = (e: MouseEvent, msg: any) => {
 
 const fetchMessages = async (silent: boolean = false) => {
   if (!props.accountId) return
+
+  const targetAccount = accounts.value.find(a => a.id === props.accountId)
+  if (targetAccount && targetAccount.hasPassword === false) {
+    messages.value = []
+    totalMessages.value = 0
+    isLoading.value = false
+    return
+  }
+
   const cacheKey = `${props.accountId}:${props.folderPath || 'INBOX'}`
 
-  // INSTANT IN-MEMORY RENDER: If cached in client memory, show immediately with zero delay
-  if (clientMessagesCache.value[cacheKey]) {
+  // INSTANT IN-MEMORY RENDER: If cached in client memory AND account has password, show immediately with zero delay
+  if (clientMessagesCache.value[cacheKey] && targetAccount?.hasPassword !== false) {
     messages.value = clientMessagesCache.value[cacheKey].messages
     totalMessages.value = clientMessagesCache.value[cacheKey].total
     isLoading.value = false
@@ -175,6 +184,8 @@ const fetchMessages = async (silent: boolean = false) => {
       }
     }
   } catch (e) {
+    messages.value = []
+    totalMessages.value = 0
     console.error('Failed to fetch messages:', e)
   } finally {
     isLoading.value = false
@@ -422,13 +433,13 @@ const handleDragStart = (e: DragEvent, msg: any) => {
   }
 }
 
-watch([() => props.accountId, () => props.folderPath], () => {
+watch([() => props.accountId, () => props.folderPath, () => accounts.value], () => {
   selectedMessageId.value = null
   selectedMessageDetail.value = null
   emits('select-message', null)
   clearSelection()
   fetchMessages(false)
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 watch(lastSyncTimestamp, () => {
   fetchMessages(true)

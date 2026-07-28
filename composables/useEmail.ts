@@ -132,6 +132,17 @@ export const useEmail = () => {
       if (selectedAccountId.value) {
         checkAccountPassword(selectedAccountId.value);
       }
+
+      // Purge client messages cache for accounts missing password
+      (data || []).forEach((acc: any) => {
+        if (!acc.hasPassword) {
+          Object.keys(clientMessagesCache.value).forEach(key => {
+            if (key.startsWith(`${acc.id}:`)) {
+              delete clientMessagesCache.value[key];
+            }
+          });
+        }
+      });
     } catch (e) {
       console.error('Failed to fetch accounts:', e);
     }
@@ -139,6 +150,14 @@ export const useEmail = () => {
 
   const fetchFolders = async (accountId: string, force: boolean = false) => {
     if (!import.meta.client || !accountId) return;
+    const acc = accounts.value.find(a => a.id === accountId);
+    if (acc && !acc.hasPassword) {
+      folders.value = {
+        ...folders.value,
+        [accountId]: []
+      };
+      return;
+    }
     if (!force && folders.value[accountId] && folders.value[accountId].length > 0) {
       return;
     }
