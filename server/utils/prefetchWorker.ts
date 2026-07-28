@@ -57,8 +57,14 @@ export const prefetchWorker = {
       try {
         const data = await readData();
         const validAccounts = (data.emailAccounts || []).filter(
-          (a: any) => a.hasPassword !== false && a.imapPass && a.visible !== false
+          (a: any) => a && a.imapPass && typeof a.imapPass === 'string' && a.imapPass.trim() !== '' && a.visible !== false
         );
+
+        if (validAccounts.length === 0) {
+          console.log('[Prefetch] No accounts with valid passwords found. Skipping prefetch.');
+          prefetchState.status = 'completed';
+          return;
+        }
 
         for (const acc of validAccounts) {
           try {
@@ -75,16 +81,26 @@ export const prefetchWorker = {
                   try {
                     await imapService.fetchMessageDetail(acc.id, folder.path, msg.id);
                     prefetchState.messagesCached++;
-                  } catch (err) {
-                    console.error(`Prefetch msg ${msg.id} in ${folder.path} error:`, err);
+                  } catch (err: any) {
+                    if (err?.message !== 'AUTH_REQUIRED') {
+                      console.error(`Prefetch msg ${msg.id} in ${folder.path} error:`, err);
+                    }
                   }
                 }
-              } catch (err) {
-                console.error(`Prefetch folder ${folder.path} error:`, err);
+              } catch (err: any) {
+                if (err?.message === 'AUTH_REQUIRED') {
+                  console.warn(`[Prefetch] Skipped folder ${folder.path} for ${acc.email} (Password required)`);
+                } else {
+                  console.error(`Prefetch folder ${folder.path} error:`, err);
+                }
               }
             }
-          } catch (err) {
-            console.error(`Prefetch account ${acc.email} error:`, err);
+          } catch (err: any) {
+            if (err?.message === 'AUTH_REQUIRED') {
+              console.warn(`[Prefetch] Skipped account ${acc.email} (Password required)`);
+            } else {
+              console.error(`Prefetch account ${acc.email} error:`, err);
+            }
           }
         }
 

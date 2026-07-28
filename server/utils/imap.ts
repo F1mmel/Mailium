@@ -28,7 +28,7 @@ export const imapService = {
       logger: false,
       clientInfo: {
         name: 'Mailium App',
-        version: '2.0.1'
+        version: '2.0.2'
       }
     });
 
