@@ -97,6 +97,20 @@ async function run() {
     }
   }
 
+  function parseSemver(v) {
+    const m = String(v || '').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    return { major: m[0] || 0, minor: m[1] || 0, patch: m[2] || 0 };
+  }
+  function isNewer(latest, current) {
+    const l = parseSemver(latest);
+    const c = parseSemver(current);
+    if (l.major > c.major) return true;
+    if (l.major < c.major) return false;
+    if (l.minor > c.minor) return true;
+    if (l.minor < c.minor) return false;
+    return l.patch > c.patch;
+  }
+
   if (!skipUpdate) {
     try {
       console.log('[Auto-Update] Checking GitHub Releases for updates...');
@@ -108,7 +122,7 @@ async function run() {
         const latestTag = release.tag_name;
         const currentTag = ${JSON.stringify(appVersion)};
         
-        if (latestTag && latestTag !== currentTag) {
+        if (latestTag && latestTag !== currentTag && isNewer(latestTag, currentTag)) {
           console.log('[Auto-Update] 🚀 New version found: ' + latestTag + ' (current: ' + currentTag + ')');
           const isWin = process.platform === 'win32';
           const targetAssetName = isWin ? 'mailium.exe' : 'mailium';

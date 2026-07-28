@@ -56,6 +56,14 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=v$VERSION" >> $GITHUB_ENV
+
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
@@ -74,10 +82,10 @@ jobs:
       - name: Create GitHub Release & Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.${{ github.run_number }}
-          name: Mailium v2.0.${{ github.run_number }}
+          tag_name: ${{ env.VERSION }}
+          name: Mailium ${{ env.VERSION }}
           body: |
-            ## Mailium Standalone Binaries (v2.0.${{ github.run_number }})
+            ## Mailium Standalone Binaries (${{ env.VERSION }})
 
             Automated build binaries for Mailium email client:
 
