@@ -518,9 +518,6 @@ const triggerMailcowSync = async () => {
                   </Badge>
                 </div>
                 <div class="text-xs text-zinc-400 font-mono mt-0.5">{{ acc.email }}</div>
-                <div class="text-[11px] text-zinc-500 font-mono mt-0.5">
-                  IMAP: {{ acc.host }}:{{ acc.port }} | SMTP: {{ acc.smtpHost }}:{{ acc.smtpPort }}
-                </div>
               </div>
             </div>
 
