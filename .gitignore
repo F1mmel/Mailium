@@ -1,0 +1,33 @@
+# Nuxt 3 & Nitro build outputs
+.nuxt/
+.output/
+dist/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Temporary / Scratch directories & logs
+OLD/
+NEW/
+newwww/
+*.log
+build.log
+
+# Operating System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local data & storage files
+data.json
+dataa.json
+**/data.json
+**/dataa.json
+storage/*
+!storage/.gitkeep

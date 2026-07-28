@@ -1,0 +1,96 @@
+name: Build & Release Standalone Binaries
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            binary_name: mailium
+          - os: windows-latest
+            target: win-x64
+            binary_name: mailium.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (Node 22 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Nuxt application
+        run: npm run build
+
+      - name: Build Standalone Executable Binary
+        run: npm run build:binary
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mailium-${{ matrix.target }}
+          path: dist/${{ matrix.binary_name }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mailium-linux-x64
+          path: ./release-assets
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mailium-win-x64
+          path: ./release-assets
+
+      - name: Make Linux Binary Executable
+        run: chmod +x ./release-assets/mailium
+
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.${{ github.run_number }}
+          name: Mailium v2.0.${{ github.run_number }}
+          body: |
+            ## Mailium Standalone Binaries (v2.0.${{ github.run_number }})
+
+            Automated build binaries for Mailium email client:
+
+            - 🐧 **Linux (amd64)**: `mailium`
+              ```bash
+              chmod +x mailium
+              ./mailium
+              ```
+
+            - 🪟 **Windows (x64)**: `mailium.exe`
+              ```cmd
+              mailium.exe
+              ```
+          files: |
+            ./release-assets/mailium
+            ./release-assets/mailium.exe
